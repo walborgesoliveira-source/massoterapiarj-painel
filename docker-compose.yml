@@ -1,0 +1,15 @@
+services:
+  massoterapiarj_painel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: massoterapiarj_painel
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8093:80"
+    networks:
+      - proxy_net
+
+networks:
+  proxy_net:
+    external: true
