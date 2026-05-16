@@ -204,7 +204,7 @@ export default function Agenda() {
           <p>Agenda da equipe</p>
         </div>
         <nav>
-          <a className="active" href="/">Agenda</a>
+          <a className="active" href="/painel/">Agenda</a>
         </nav>
         <div className="user-box">
           <span>{usuario?.nome || 'Usuario'}</span>

@@ -15,7 +15,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form.email, form.senha);
-      navigate('/');
+      navigate('/painel/');
     } catch {
       setErro('E-mail ou senha invalidos.');
     } finally {

@@ -5,15 +5,16 @@ import Login from './pages/Login';
 
 function Privado({ children }) {
   const { usuario } = useAuth();
-  return usuario ? children : <Navigate to="/login" replace />;
+  return usuario ? children : <Navigate to="/painel/login" replace />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Privado><Agenda /></Privado>} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/painel/login" element={<Login />} />
+      <Route path="/painel/" element={<Privado><Agenda /></Privado>} />
+      <Route path="/painel/*" element={<Navigate to="/painel/" replace />} />
+      <Route path="*" element={<Navigate to="/painel/" replace />} />
     </Routes>
   );
 }
