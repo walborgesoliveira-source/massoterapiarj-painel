@@ -19,6 +19,7 @@ Validar:
 
 ```bash
 curl -I http://127.0.0.1:8093
+curl -I http://127.0.0.1:8093/painel/
 ```
 
 ## Proxy
@@ -32,4 +33,4 @@ No Nginx Proxy Manager, criar Proxy Host apontando para:
 
 ## Integração
 
-O frontend usa `/api` para acessar internamente `coreps_api:3001` pela rede Docker `proxy_net`.
+O frontend usa `/painel/api` para acessar internamente `coreps_api:3001/api` pela rede Docker `proxy_net`.
