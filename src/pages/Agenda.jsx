@@ -25,6 +25,22 @@ const COLABORADORES_PADRAO = [
   { nome: 'Equipe Massoterapia RJ', whatsapp: '', iniciais: 'MR', avatarClass: 'brown' },
 ];
 
+const HORARIOS_AGENDA = [
+  '08:00',
+  '09:00',
+  '10:00',
+  '11:00',
+  '12:00',
+  '13:00',
+  '14:00',
+  '15:00',
+  '16:00',
+  '17:00',
+  '18:00',
+  '19:00',
+  '20:00',
+];
+
 function carregarColaboradores() {
   try {
     const salvos = JSON.parse(localStorage.getItem('mrj_colaboradores_whatsapp') || '[]');
@@ -41,6 +57,12 @@ function hojeISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function ajustarDataISO(valor, dias) {
+  const base = valor ? new Date(`${valor}T12:00:00`) : new Date();
+  base.setDate(base.getDate() + dias);
+  return base.toISOString().slice(0, 10);
+}
+
 function formatarData(valor) {
   if (!valor) return '-';
   const [ano, mes, dia] = String(valor).slice(0, 10).split('-');
@@ -53,6 +75,14 @@ function formatarHora(valor) {
 
 function contato(row) {
   return row.whatsapp || row.telefone || row.email || row.telegram || '-';
+}
+
+function horarioChave(row) {
+  return formatarHora(row.hora_agendada);
+}
+
+function statusContaComoLivre(status) {
+  return ['Cancelado', 'Recusado', 'Não compareceu'].includes(status);
 }
 
 function somenteDigitos(valor) {
@@ -111,6 +141,7 @@ function valorInicial(row) {
 export default function Agenda() {
   const { usuario, logout } = useAuth();
   const [rows, setRows] = useState([]);
+  const [agendaDia, setAgendaDia] = useState([]);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState('');
   const [data, setData] = useState(hojeISO());
@@ -122,6 +153,7 @@ export default function Agenda() {
   const [copiado, setCopiado] = useState(false);
   const [colaboradores, setColaboradores] = useState(carregarColaboradores);
   const [listaWhatsAppAberta, setListaWhatsAppAberta] = useState(false);
+  const [ultimaAtualizacao, setUltimaAtualizacao] = useState('');
 
   const colaboradorSelecionado = useMemo(() => {
     if (!form?.colaborador) return null;
@@ -134,6 +166,36 @@ export default function Agenda() {
       return acc;
     }, {});
   }, [rows]);
+
+  const slotsAgenda = useMemo(() => {
+    const porHorario = agendaDia.reduce((acc, row) => {
+      const chave = horarioChave(row);
+      if (!acc[chave]) acc[chave] = [];
+      acc[chave].push(row);
+      return acc;
+    }, {});
+
+    return HORARIOS_AGENDA.map((horario) => {
+      const agendamentos = porHorario[horario] || [];
+      const ativos = agendamentos.filter((row) => !statusContaComoLivre(row.status));
+      return {
+        horario,
+        agendamentos,
+        principal: ativos[0] || agendamentos[0] || null,
+        ocupado: ativos.length > 0,
+      };
+    });
+  }, [agendaDia]);
+
+  const resumoAgendaDia = useMemo(() => {
+    const ocupados = slotsAgenda.filter((slot) => slot.ocupado).length;
+    const semProfissional = agendaDia.filter((row) => !row.colaborador && !statusContaComoLivre(row.status)).length;
+    return {
+      livres: slotsAgenda.length - ocupados,
+      ocupados,
+      semProfissional,
+    };
+  }, [agendaDia, slotsAgenda]);
 
   function carregar() {
     setLoading(true);
@@ -151,9 +213,28 @@ export default function Agenda() {
       .finally(() => setLoading(false));
   }
 
+  function carregarAgendaDia() {
+    const params = { limit: 200 };
+    if (data) params.data = data;
+
+    return api.get('/agendamentos', { params })
+      .then((response) => {
+        const dados = response.data.data || [];
+        setAgendaDia(dados);
+        setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      })
+      .catch(() => setErro('Nao foi possivel atualizar a agenda do dia.'));
+  }
+
   useEffect(() => {
     carregar();
   }, [status, data]);
+
+  useEffect(() => {
+    carregarAgendaDia();
+    const timer = window.setInterval(carregarAgendaDia, 30000);
+    return () => window.clearInterval(timer);
+  }, [data]);
 
   function abrir(row) {
     setSelecionado(row);
@@ -176,6 +257,7 @@ export default function Agenda() {
       };
       await api.put(`/agendamentos/${selecionado.id}/status`, payload);
       await carregar();
+      await carregarAgendaDia();
     } catch (error) {
       setErro(error.response?.data?.erro || 'Nao foi possivel salvar o agendamento.');
     } finally {
@@ -227,10 +309,53 @@ export default function Agenda() {
             <p>Pedidos recebidos pelo site, aprovacao e aviso manual para colaboradores.</p>
           </div>
           <div className="header-actions">
+            <button type="button" onClick={() => setData(ajustarDataISO(data, -1))}>Anterior</button>
             <button type="button" onClick={() => setData(hojeISO())}>Hoje</button>
+            <button type="button" onClick={() => setData(ajustarDataISO(data, 1))}>Proximo</button>
             <button className="primary" type="button" onClick={carregar}>Atualizar</button>
           </div>
         </header>
+
+        <section className="schedule-board">
+          <div className="schedule-head">
+            <div>
+              <h3>Agenda do dia</h3>
+              <p>{formatarData(data)}{ultimaAtualizacao ? ` - atualizado as ${ultimaAtualizacao}` : ''}</p>
+            </div>
+            <Campo label="Data">
+              <input type="date" value={data} onChange={(event) => setData(event.target.value)} />
+            </Campo>
+          </div>
+          <div className="schedule-summary">
+            <span><strong>{resumoAgendaDia.livres}</strong> livres</span>
+            <span><strong>{resumoAgendaDia.ocupados}</strong> agendados</span>
+            <span><strong>{resumoAgendaDia.semProfissional}</strong> sem profissional</span>
+          </div>
+          <div className="schedule-grid">
+            {slotsAgenda.map((slot) => (
+              <button
+                key={slot.horario}
+                type="button"
+                className={slot.ocupado ? 'schedule-slot booked' : 'schedule-slot free'}
+                onClick={() => slot.principal && abrir(slot.principal)}
+                disabled={!slot.principal}
+              >
+                <span>{slot.horario}</span>
+                {slot.principal ? (
+                  <>
+                    <strong>{slot.principal.nome_cliente || 'Cliente'}</strong>
+                    <small>{slot.principal.colaborador || 'Sem profissional'}</small>
+                  </>
+                ) : (
+                  <>
+                    <strong>Livre</strong>
+                    <small>Sem atendimento</small>
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
 
         <section className="stats-grid">
           <Stat label="Total filtrado" value={total} />
@@ -347,44 +472,46 @@ export default function Agenda() {
           </form>
 
           <section className="whatsapp-panel">
-            <h3>Avisar colaborador no WhatsApp</h3>
-            <p>Abre o WhatsApp com a mensagem pronta. O envio continua manual.</p>
-            {!colaboradorSelecionado ? (
-              <div className="whatsapp-empty">
-                <span>!</span>
-                <p>Defina um colaborador acima para liberar o envio do aviso no WhatsApp.</p>
-              </div>
-            ) : (
-              <>
-                <ColaboradorWhatsAppCard
-                  item={colaboradorSelecionado}
-                  onChange={atualizarWhatsAppColaborador}
-                  onSend={abrirWhatsApp}
-                  principal
-                />
+            <details>
+              <summary>Avisar no WhatsApp</summary>
+              <p>Abre o WhatsApp com a mensagem pronta. O envio continua manual.</p>
+              {!colaboradorSelecionado ? (
+                <div className="whatsapp-empty">
+                  <span>!</span>
+                  <p>Escolha o profissional no campo Colaborador antes de enviar o aviso.</p>
+                </div>
+              ) : (
+                <>
+                  <ColaboradorWhatsAppCard
+                    item={colaboradorSelecionado}
+                    onChange={atualizarWhatsAppColaborador}
+                    onSend={abrirWhatsApp}
+                    principal
+                  />
 
-                <button
-                  type="button"
-                  className="whatsapp-expand"
-                  onClick={() => setListaWhatsAppAberta((aberta) => !aberta)}
-                >
-                  {listaWhatsAppAberta ? 'Recolher lista' : 'Avisar outro colaborador'}
-                </button>
+                  <button
+                    type="button"
+                    className="whatsapp-expand"
+                    onClick={() => setListaWhatsAppAberta((aberta) => !aberta)}
+                  >
+                    {listaWhatsAppAberta ? 'Ocultar contatos' : 'Adicionar outro contato'}
+                  </button>
 
-                {listaWhatsAppAberta && (
-                  <div className="whatsapp-list">
-                    {colaboradores.map((item) => (
-                      <ColaboradorWhatsAppCard
-                        key={item.nome}
-                        item={item}
-                        onChange={atualizarWhatsAppColaborador}
-                        onSend={abrirWhatsApp}
-                      />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+                  {listaWhatsAppAberta && (
+                    <div className="whatsapp-list">
+                      {colaboradores.map((item) => (
+                        <ColaboradorWhatsAppCard
+                          key={item.nome}
+                          item={item}
+                          onChange={atualizarWhatsAppColaborador}
+                          onSend={abrirWhatsApp}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </details>
           </section>
         </Modal>
       )}
