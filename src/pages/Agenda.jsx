@@ -17,12 +17,12 @@ const STATUS_CLASS = {
 };
 
 const COLABORADORES_PADRAO = [
-  { nome: 'Selma', whatsapp: '' },
-  { nome: 'Ellaine', whatsapp: '' },
-  { nome: 'Fabiola', whatsapp: '' },
-  { nome: 'Diana', whatsapp: '' },
-  { nome: 'Amanda', whatsapp: '' },
-  { nome: 'Equipe Massoterapia RJ', whatsapp: '' },
+  { nome: 'Selma', whatsapp: '', iniciais: 'SE', avatarClass: 'mint' },
+  { nome: 'Ellaine', whatsapp: '21980059845', iniciais: 'EL', avatarClass: 'blue' },
+  { nome: 'Fabiola', whatsapp: '', iniciais: 'FA', avatarClass: 'violet' },
+  { nome: 'Diana', whatsapp: '', iniciais: 'DI', avatarClass: 'amber' },
+  { nome: 'Amanda', whatsapp: '', iniciais: 'AM', avatarClass: 'coral' },
+  { nome: 'Equipe Massoterapia RJ', whatsapp: '', iniciais: 'MR', avatarClass: 'brown' },
 ];
 
 function carregarColaboradores() {
@@ -67,23 +67,22 @@ function normalizarWhatsApp(valor) {
   return digitos;
 }
 
-function mensagemColaborador(row, form) {
+function mensagemColaborador(row, form, nomeColaborador) {
   const status = form?.status || row.status || 'Pendente';
   const data = formatarData(form?.data_agendada || row.data_agendada);
   const hora = formatarHora(form?.hora_agendada || row.hora_agendada);
   const local = form?.local || row.local || '-';
-  const colaborador = form?.colaborador || row.colaborador || '-';
+  const colaborador = nomeColaborador || form?.colaborador || row.colaborador || '-';
   const linhas = [
-    `Agendamento ${status} - Massoterapia RJ`,
+    '*Massoterapia RJ - Aviso de Agendamento*',
     '',
-    `Codigo: ${row.codigo || '-'}`,
-    `Cliente: ${row.nome_cliente || '-'}`,
-    `Contato: ${contato(row)}`,
-    `Servico: ${row.servico || '-'}`,
-    `Data: ${data}`,
-    `Horario: ${hora}`,
-    `Local: ${local}`,
-    `Colaborador: ${colaborador}`,
+    `Ola ${colaborador}! Voce foi escalado(a) para um atendimento.`,
+    '',
+    `*Cliente:* ${row.nome_cliente || '-'}`,
+    `*Servico:* ${row.servico || '-'}`,
+    `*Data:* ${data} as ${hora}`,
+    `*Local:* ${local}`,
+    `*Status:* ${status}`,
   ];
 
   if (row.observacoes_cliente) {
@@ -92,6 +91,8 @@ function mensagemColaborador(row, form) {
   if (form?.observacoes_gerente) {
     linhas.push('', `Observacoes internas: ${form.observacoes_gerente}`);
   }
+
+  linhas.push('', 'Qualquer duvida, entre em contato. Obrigado!');
 
   return linhas.join('\n');
 }
@@ -120,6 +121,12 @@ export default function Agenda() {
   const [saving, setSaving] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [colaboradores, setColaboradores] = useState(carregarColaboradores);
+  const [listaWhatsAppAberta, setListaWhatsAppAberta] = useState(false);
+
+  const colaboradorSelecionado = useMemo(() => {
+    if (!form?.colaborador) return null;
+    return colaboradores.find((item) => item.nome === form.colaborador) || null;
+  }, [colaboradores, form?.colaborador]);
 
   const resumo = useMemo(() => {
     return rows.reduce((acc, row) => {
@@ -152,6 +159,7 @@ export default function Agenda() {
     setSelecionado(row);
     setForm(valorInicial(row));
     setCopiado(false);
+    setListaWhatsAppAberta(false);
     setErro('');
   }
 
@@ -180,11 +188,11 @@ export default function Agenda() {
     setCopiado(true);
   }
 
-  function abrirWhatsApp(numero) {
+  function abrirWhatsApp(numero, nomeColaborador = form?.colaborador) {
     const telefone = normalizarWhatsApp(numero);
-    if (!telefone) return;
-    const texto = encodeURIComponent(mensagemColaborador(selecionado, form));
-    window.open(`https://wa.me/${telefone}?text=${texto}`, '_blank', 'noopener,noreferrer');
+    const texto = encodeURIComponent(mensagemColaborador(selecionado, form, nomeColaborador));
+    const destino = telefone ? `https://wa.me/${telefone}?text=${texto}` : `https://wa.me/?text=${texto}`;
+    window.open(destino, '_blank', 'noopener,noreferrer');
   }
 
   function atualizarWhatsAppColaborador(nome, whatsapp) {
@@ -316,7 +324,13 @@ export default function Agenda() {
             </Campo>
 
             <Campo label="Colaborador">
-              <select value={form.colaborador} onChange={(event) => setForm((current) => ({ ...current, colaborador: event.target.value }))}>
+              <select
+                value={form.colaborador}
+                onChange={(event) => {
+                  setForm((current) => ({ ...current, colaborador: event.target.value }));
+                  setListaWhatsAppAberta(false);
+                }}
+              >
                 <option value="">Definir depois</option>
                 {colaboradores.map((item) => <option key={item.nome} value={item.nome}>{item.nome}</option>)}
               </select>
@@ -335,32 +349,66 @@ export default function Agenda() {
           <section className="whatsapp-panel">
             <h3>Avisar colaborador no WhatsApp</h3>
             <p>Abre o WhatsApp com a mensagem pronta. O envio continua manual.</p>
-            <div className="whatsapp-grid">
-              {colaboradores.map((item) => (
-                <div className="whatsapp-contact" key={item.nome}>
-                  <label>
-                    <span>{item.nome}</span>
-                    <input
-                      type="tel"
-                      placeholder="(21) 99999-9999"
-                      value={item.whatsapp}
-                      onChange={(event) => atualizarWhatsAppColaborador(item.nome, event.target.value)}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    disabled={!item.whatsapp}
-                    onClick={() => abrirWhatsApp(item.whatsapp)}
-                  >
-                    Enviar aviso
-                  </button>
-                </div>
-              ))}
-            </div>
+            {!colaboradorSelecionado ? (
+              <div className="whatsapp-empty">
+                <span>!</span>
+                <p>Defina um colaborador acima para liberar o envio do aviso no WhatsApp.</p>
+              </div>
+            ) : (
+              <>
+                <ColaboradorWhatsAppCard
+                  item={colaboradorSelecionado}
+                  onChange={atualizarWhatsAppColaborador}
+                  onSend={abrirWhatsApp}
+                  principal
+                />
+
+                <button
+                  type="button"
+                  className="whatsapp-expand"
+                  onClick={() => setListaWhatsAppAberta((aberta) => !aberta)}
+                >
+                  {listaWhatsAppAberta ? 'Recolher lista' : 'Avisar outro colaborador'}
+                </button>
+
+                {listaWhatsAppAberta && (
+                  <div className="whatsapp-list">
+                    {colaboradores.map((item) => (
+                      <ColaboradorWhatsAppCard
+                        key={item.nome}
+                        item={item}
+                        onChange={atualizarWhatsAppColaborador}
+                        onSend={abrirWhatsApp}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </section>
         </Modal>
       )}
     </main>
+  );
+}
+
+function ColaboradorWhatsAppCard({ item, onChange, onSend, principal = false }) {
+  return (
+    <div className={principal ? 'whatsapp-selected' : 'whatsapp-row'}>
+      <div className={`whatsapp-avatar ${item.avatarClass}`}>{item.iniciais}</div>
+      <label className="whatsapp-person">
+        <strong>{item.nome}</strong>
+        <input
+          type="tel"
+          placeholder="(21) 99999-9999"
+          value={item.whatsapp}
+          onChange={(event) => onChange(item.nome, event.target.value)}
+        />
+      </label>
+      <button type="button" className="whatsapp-send" onClick={() => onSend(item.whatsapp, item.nome)}>
+        {principal ? 'Enviar aviso' : 'Enviar'}
+      </button>
+    </div>
   );
 }
 
