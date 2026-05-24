@@ -19,6 +19,12 @@ export function AuthProvider({ children }) {
     setUsuario(data.usuario);
   }
 
+  function atualizarUsuario(dados) {
+    const proximo = { ...usuario, ...dados };
+    localStorage.setItem('mrj_painel_usuario', JSON.stringify(proximo));
+    setUsuario(proximo);
+  }
+
   function logout() {
     localStorage.removeItem('mrj_painel_token');
     localStorage.removeItem('mrj_painel_usuario');
@@ -26,7 +32,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout }}>
+    <AuthContext.Provider value={{ usuario, login, logout, atualizarUsuario }}>
       {children}
     </AuthContext.Provider>
   );

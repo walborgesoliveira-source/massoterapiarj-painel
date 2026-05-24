@@ -171,6 +171,14 @@ td small {
   font-size: 14px;
 }
 
+.user-box small {
+  overflow: hidden;
+  color: #a9917c;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .content {
   padding: 32px;
   min-width: 0;
@@ -409,6 +417,11 @@ td small {
   color: #991b1b;
 }
 
+.alert.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -493,6 +506,23 @@ td small {
   display: flex;
   gap: 10px;
   margin-top: 4px;
+}
+
+.account-form {
+  gap: 12px;
+}
+
+.password-panel {
+  padding: 16px;
+  border: 1px solid #eadfD2;
+  border-radius: 10px;
+  background: #fbf7f1;
+}
+
+.password-panel h3 {
+  margin: 0 0 14px;
+  color: #3a3027;
+  font-size: 16px;
 }
 
 .whatsapp-panel {

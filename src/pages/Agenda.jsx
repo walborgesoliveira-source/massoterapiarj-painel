@@ -139,7 +139,7 @@ function valorInicial(row) {
 }
 
 export default function Agenda() {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, atualizarUsuario } = useAuth();
   const [rows, setRows] = useState([]);
   const [agendaDia, setAgendaDia] = useState([]);
   const [total, setTotal] = useState(0);
@@ -154,6 +154,16 @@ export default function Agenda() {
   const [colaboradores, setColaboradores] = useState(carregarColaboradores);
   const [listaWhatsAppAberta, setListaWhatsAppAberta] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('');
+  const [contaAberta, setContaAberta] = useState(false);
+  const [contaForm, setContaForm] = useState({
+    nome: usuario?.nome || '',
+    senha_atual: '',
+    nova_senha: '',
+    confirmar_senha: '',
+  });
+  const [contaSaving, setContaSaving] = useState(false);
+  const [contaErro, setContaErro] = useState('');
+  const [contaSucesso, setContaSucesso] = useState('');
 
   const colaboradorSelecionado = useMemo(() => {
     if (!form?.colaborador) return null;
@@ -236,6 +246,10 @@ export default function Agenda() {
     return () => window.clearInterval(timer);
   }, [data]);
 
+  useEffect(() => {
+    setContaForm((current) => ({ ...current, nome: usuario?.nome || '' }));
+  }, [usuario?.nome]);
+
   function abrir(row) {
     setSelecionado(row);
     setForm(valorInicial(row));
@@ -285,6 +299,59 @@ export default function Agenda() {
     });
   }
 
+  function abrirConta() {
+    setContaForm({
+      nome: usuario?.nome || '',
+      senha_atual: '',
+      nova_senha: '',
+      confirmar_senha: '',
+    });
+    setContaErro('');
+    setContaSucesso('');
+    setContaAberta(true);
+  }
+
+  async function salvarConta(event) {
+    event.preventDefault();
+    setContaSaving(true);
+    setContaErro('');
+    setContaSucesso('');
+
+    if (contaForm.nova_senha || contaForm.confirmar_senha || contaForm.senha_atual) {
+      if (contaForm.nova_senha.length < 8) {
+        setContaErro('A nova senha deve ter ao menos 8 caracteres.');
+        setContaSaving(false);
+        return;
+      }
+      if (contaForm.nova_senha !== contaForm.confirmar_senha) {
+        setContaErro('A confirmação da senha não confere.');
+        setContaSaving(false);
+        return;
+      }
+    }
+
+    try {
+      const payload = {
+        nome: contaForm.nome,
+        senha_atual: contaForm.senha_atual || undefined,
+        nova_senha: contaForm.nova_senha || undefined,
+      };
+      const { data: usuarioAtualizado } = await api.put('/usuarios/me', payload);
+      atualizarUsuario(usuarioAtualizado);
+      setContaForm((current) => ({
+        ...current,
+        senha_atual: '',
+        nova_senha: '',
+        confirmar_senha: '',
+      }));
+      setContaSucesso('Dados atualizados com sucesso.');
+    } catch (error) {
+      setContaErro(error.response?.data?.erro || 'Nao foi possivel atualizar seus dados.');
+    } finally {
+      setContaSaving(false);
+    }
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -298,6 +365,8 @@ export default function Agenda() {
         </nav>
         <div className="user-box">
           <span>{usuario?.nome || 'Usuario'}</span>
+          <small>{usuario?.email}</small>
+          <button type="button" onClick={abrirConta}>Minha conta</button>
           <button type="button" onClick={logout}>Sair</button>
         </div>
       </aside>
@@ -513,6 +582,63 @@ export default function Agenda() {
               )}
             </details>
           </section>
+        </Modal>
+      )}
+
+      {contaAberta && (
+        <Modal
+          titulo="Minha conta"
+          subtitulo={usuario?.email}
+          onClose={() => setContaAberta(false)}
+        >
+          <form onSubmit={salvarConta} className="modal-grid account-form">
+            {contaErro && <div className="alert error">{contaErro}</div>}
+            {contaSucesso && <div className="alert success">{contaSucesso}</div>}
+
+            <Campo label="Nome" required>
+              <input
+                required
+                value={contaForm.nome}
+                onChange={(event) => setContaForm((current) => ({ ...current, nome: event.target.value }))}
+              />
+            </Campo>
+
+            <div className="password-panel">
+              <h3>Trocar senha</h3>
+              <Campo label="Senha atual">
+                <input
+                  type="password"
+                  value={contaForm.senha_atual}
+                  onChange={(event) => setContaForm((current) => ({ ...current, senha_atual: event.target.value }))}
+                />
+              </Campo>
+              <div className="two-cols">
+                <Campo label="Nova senha">
+                  <input
+                    type="password"
+                    minLength="8"
+                    value={contaForm.nova_senha}
+                    onChange={(event) => setContaForm((current) => ({ ...current, nova_senha: event.target.value }))}
+                  />
+                </Campo>
+                <Campo label="Confirmar nova senha">
+                  <input
+                    type="password"
+                    minLength="8"
+                    value={contaForm.confirmar_senha}
+                    onChange={(event) => setContaForm((current) => ({ ...current, confirmar_senha: event.target.value }))}
+                  />
+                </Campo>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="primary" type="submit" disabled={contaSaving}>
+                {contaSaving ? 'Salvando...' : 'Salvar dados'}
+              </button>
+              <button type="button" onClick={() => setContaAberta(false)}>Fechar</button>
+            </div>
+          </form>
         </Modal>
       )}
     </main>
