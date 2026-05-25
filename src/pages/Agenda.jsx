@@ -367,6 +367,10 @@ export default function Agenda() {
           <span>{usuario?.nome || 'Usuario'}</span>
           <small>{usuario?.email}</small>
           <button type="button" onClick={abrirConta}>Minha conta</button>
+          <a href="/" style={{
+            display: 'block', textAlign: 'center', fontSize: 13,
+            color: '#cfbca6', textDecoration: 'none', marginTop: 4,
+          }}>← Voltar para o Site</a>
           <button type="button" onClick={logout}>Sair</button>
         </div>
       </aside>

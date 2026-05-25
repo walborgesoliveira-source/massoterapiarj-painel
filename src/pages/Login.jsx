@@ -55,6 +55,13 @@ export default function Login() {
         <button className="primary full" type="submit" disabled={loading}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
+
+        <a href="/" style={{
+          display: 'block', textAlign: 'center', marginTop: 16,
+          fontSize: 13, color: '#7b6a5a', textDecoration: 'none',
+        }}>
+          ← Voltar para o Site
+        </a>
       </form>
     </main>
   );
