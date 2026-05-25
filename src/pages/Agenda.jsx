@@ -6,6 +6,21 @@ import api from '../services/api';
 
 const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu'];
 
+const TURNOS_PADRAO = [
+  { id: 'turno_manha', label: 'Manhã & Tarde',  inicio: '09:00', fim: '15:30' },
+  { id: 'turno_tarde', label: 'Tarde & Noite',   inicio: '15:30', fim: '20:30' },
+];
+
+const PROFS_TURNOS_PADRAO = [
+  { nome: 'Ellaine', turno: 'turno_manha', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma',   turno: 'turno_manha', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Fabiola', turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana',   turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda',  turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
+];
+
+const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
+
 const STATUS_CLASS = {
   Pendente: 'pending',
   Aprovado: 'approved',
@@ -154,6 +169,14 @@ export default function Agenda() {
   const [colaboradores, setColaboradores] = useState(carregarColaboradores);
   const [listaWhatsAppAberta, setListaWhatsAppAberta] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('');
+  const [turnosAberto, setTurnosAberto] = useState(false);
+  const [profsTurnos, setProfsTurnos] = useState(() => {
+    try {
+      const s = localStorage.getItem(STORAGE_PROFS_TURNOS);
+      return s ? JSON.parse(s) : PROFS_TURNOS_PADRAO;
+    } catch { return PROFS_TURNOS_PADRAO; }
+  });
+
   const [contaAberta, setContaAberta] = useState(false);
   const [contaForm, setContaForm] = useState({
     nome: usuario?.nome || '',
@@ -299,6 +322,16 @@ export default function Agenda() {
     });
   }
 
+  function mudarTurnoProfissional(nome, novoTurno) {
+    setProfsTurnos((atual) => atual.map((p) => p.nome === nome ? { ...p, turno: novoTurno } : p));
+  }
+
+  function salvarTurnos(event) {
+    event.preventDefault();
+    localStorage.setItem(STORAGE_PROFS_TURNOS, JSON.stringify(profsTurnos));
+    setTurnosAberto(false);
+  }
+
   function abrirConta() {
     setContaForm({
       nome: usuario?.nome || '',
@@ -362,6 +395,7 @@ export default function Agenda() {
         </div>
         <nav>
           <a className="active" href="/painel/">Agenda</a>
+          <button type="button" onClick={() => setTurnosAberto(true)}>Turnos</button>
         </nav>
         <div className="user-box">
           <span>{usuario?.nome || 'Usuario'}</span>
@@ -586,6 +620,44 @@ export default function Agenda() {
               )}
             </details>
           </section>
+        </Modal>
+      )}
+
+      {turnosAberto && (
+        <Modal
+          titulo="Gerenciar Turnos"
+          subtitulo="Turno fixo por profissional · afeta horários do site imediatamente"
+          onClose={() => setTurnosAberto(false)}
+        >
+          <form onSubmit={salvarTurnos} className="modal-grid">
+            <p style={{ color: '#8c7b6a', fontSize: 13, margin: 0 }}>
+              Altere o turno de cada profissional. A mudança é aplicada no site de agendamento sem necessidade de deploy.
+            </p>
+            {profsTurnos.map((prof) => (
+              <div key={prof.nome} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'rgba(184,137,90,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 700, color: '#946b40', flex: '0 0 auto',
+                }}>{prof.nome[0]}</div>
+                <div style={{ flex: 1 }}>
+                  <label className="field">
+                    <span>{prof.nome}</span>
+                    <select value={prof.turno} onChange={(e) => mudarTurnoProfissional(prof.nome, e.target.value)}>
+                      {TURNOS_PADRAO.map((t) => (
+                        <option key={t.id} value={t.id}>{t.label} ({t.inicio}–{t.fim})</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+            ))}
+            <div className="modal-actions">
+              <button className="primary" type="submit">Salvar turnos</button>
+              <button type="button" onClick={() => setTurnosAberto(false)}>Fechar</button>
+            </div>
+          </form>
         </Modal>
       )}
 
