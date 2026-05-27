@@ -20,6 +20,16 @@ const PROFS_TURNOS_PADRAO = [
 ];
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
+const DISPONIBILIDADE_INICIAL = {
+  data: hojeISO(),
+  hora_inicio: '09:00',
+  hora_fim: '15:30',
+  funcionario: 'Amanda',
+  disponivel: false,
+  substituto: '',
+  motivo: '',
+  observacoes: '',
+};
 
 const STATUS_CLASS = {
   Pendente: 'pending',
@@ -100,6 +110,14 @@ function statusContaComoLivre(status) {
   return ['Cancelado', 'Recusado', 'Não compareceu'].includes(status);
 }
 
+function horarioDentroIntervalo(horario, inicio, fim) {
+  return horario >= normalizarHoraCampo(inicio) && horario < normalizarHoraCampo(fim);
+}
+
+function normalizarHoraCampo(valor) {
+  return valor ? String(valor).slice(0, 5) : '';
+}
+
 function somenteDigitos(valor) {
   return String(valor || '').replace(/\D/g, '');
 }
@@ -170,6 +188,10 @@ export default function Agenda() {
   const [listaWhatsAppAberta, setListaWhatsAppAberta] = useState(false);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('');
   const [turnosAberto, setTurnosAberto] = useState(false);
+  const [disponibilidade, setDisponibilidade] = useState([]);
+  const [dispLoading, setDispLoading] = useState(false);
+  const [dispSaving, setDispSaving] = useState(false);
+  const [dispForm, setDispForm] = useState(() => ({ ...DISPONIBILIDADE_INICIAL, data: hojeISO() }));
   const [profsTurnos, setProfsTurnos] = useState(() => {
     try {
       const s = localStorage.getItem(STORAGE_PROFS_TURNOS);
@@ -230,6 +252,13 @@ export default function Agenda() {
     };
   }, [agendaDia, slotsAgenda]);
 
+  const disponibilidadePorHorario = useMemo(() => {
+    return HORARIOS_AGENDA.map((horario) => {
+      const regras = disponibilidade.filter((regra) => horarioDentroIntervalo(horario, regra.hora_inicio, regra.hora_fim));
+      return { horario, regras };
+    }).filter((item) => item.regras.length > 0);
+  }, [disponibilidade]);
+
   function carregar() {
     setLoading(true);
     setErro('');
@@ -259,12 +288,24 @@ export default function Agenda() {
       .catch(() => setErro('Nao foi possivel atualizar a agenda do dia.'));
   }
 
+  function carregarDisponibilidade() {
+    if (!data) return Promise.resolve();
+    setDispLoading(true);
+    return api.get('/agendamentos/colaboradores-disponibilidade', { params: { data } })
+      .then((response) => {
+        setDisponibilidade(response.data.registros || []);
+      })
+      .catch(() => setErro('Nao foi possivel carregar a disponibilidade dos colaboradores.'))
+      .finally(() => setDispLoading(false));
+  }
+
   useEffect(() => {
     carregar();
   }, [status, data]);
 
   useEffect(() => {
     carregarAgendaDia();
+    carregarDisponibilidade();
     const timer = window.setInterval(carregarAgendaDia, 30000);
     return () => window.clearInterval(timer);
   }, [data]);
@@ -332,6 +373,39 @@ export default function Agenda() {
     setTurnosAberto(false);
   }
 
+  async function salvarDisponibilidade(event) {
+    event.preventDefault();
+    setDispSaving(true);
+    setErro('');
+    try {
+      await api.post('/agendamentos/colaboradores-disponibilidade', {
+        ...dispForm,
+        substituto: dispForm.disponivel ? null : dispForm.substituto || null,
+      });
+      setDispForm((current) => ({
+        ...DISPONIBILIDADE_INICIAL,
+        data: current.data,
+        hora_inicio: current.hora_inicio,
+        hora_fim: current.hora_fim,
+      }));
+      await carregarDisponibilidade();
+    } catch (error) {
+      setErro(error.response?.data?.erros?.join(' ') || error.response?.data?.erro || 'Nao foi possivel salvar a disponibilidade.');
+    } finally {
+      setDispSaving(false);
+    }
+  }
+
+  async function removerDisponibilidade(id) {
+    setErro('');
+    try {
+      await api.delete(`/agendamentos/colaboradores-disponibilidade/${id}`);
+      await carregarDisponibilidade();
+    } catch (error) {
+      setErro(error.response?.data?.erro || 'Nao foi possivel remover a disponibilidade.');
+    }
+  }
+
   function abrirConta() {
     setContaForm({
       nome: usuario?.nome || '',
@@ -395,6 +469,7 @@ export default function Agenda() {
         </div>
         <nav>
           <a className="active" href="/painel/">Agenda</a>
+          <a href="#disponibilidade-colaboradores">Disponibilidade</a>
           <button type="button" onClick={() => setTurnosAberto(true)}>Turnos</button>
         </nav>
         <div className="user-box">
@@ -461,6 +536,107 @@ export default function Agenda() {
                 )}
               </button>
             ))}
+          </div>
+        </section>
+
+        <section id="disponibilidade-colaboradores" className="availability-board">
+          <div className="availability-head">
+            <div>
+              <h3>Disponibilidade dos Colaboradores</h3>
+              <p>Controle exceções do dia, substituições e indisponibilidades temporárias.</p>
+            </div>
+            <span>{formatarData(data)}</span>
+          </div>
+
+          <form className="availability-form" onSubmit={salvarDisponibilidade}>
+            <Campo label="Data">
+              <input
+                type="date"
+                value={dispForm.data}
+                onChange={(event) => {
+                  setDispForm((current) => ({ ...current, data: event.target.value }));
+                  setData(event.target.value);
+                }}
+              />
+            </Campo>
+            <Campo label="Horário inicial">
+              <input type="time" value={dispForm.hora_inicio} onChange={(event) => setDispForm((current) => ({ ...current, hora_inicio: event.target.value }))} />
+            </Campo>
+            <Campo label="Horário final">
+              <input type="time" value={dispForm.hora_fim} onChange={(event) => setDispForm((current) => ({ ...current, hora_fim: event.target.value }))} />
+            </Campo>
+            <Campo label="Funcionário">
+              <select value={dispForm.funcionario} onChange={(event) => setDispForm((current) => ({ ...current, funcionario: event.target.value }))}>
+                {COLABORADORES_PADRAO.filter((item) => item.nome !== 'Equipe Massoterapia RJ').map((item) => (
+                  <option key={item.nome} value={item.nome}>{item.nome}</option>
+                ))}
+              </select>
+            </Campo>
+            <Campo label="Disponível hoje">
+              <select
+                value={dispForm.disponivel ? 'sim' : 'nao'}
+                onChange={(event) => setDispForm((current) => ({ ...current, disponivel: event.target.value === 'sim' }))}
+              >
+                <option value="nao">Não</option>
+                <option value="sim">Sim</option>
+              </select>
+            </Campo>
+            <Campo label="Substituir por">
+              <select
+                value={dispForm.substituto}
+                disabled={dispForm.disponivel}
+                onChange={(event) => setDispForm((current) => ({ ...current, substituto: event.target.value }))}
+              >
+                <option value="">Sem substituta</option>
+                {COLABORADORES_PADRAO.filter((item) => item.nome !== 'Equipe Massoterapia RJ' && item.nome !== dispForm.funcionario).map((item) => (
+                  <option key={item.nome} value={item.nome}>{item.nome}</option>
+                ))}
+              </select>
+            </Campo>
+            <Campo label="Motivo">
+              <input value={dispForm.motivo} onChange={(event) => setDispForm((current) => ({ ...current, motivo: event.target.value }))} placeholder="Atendimento externo" />
+            </Campo>
+            <Campo label="Observações">
+              <input value={dispForm.observacoes} onChange={(event) => setDispForm((current) => ({ ...current, observacoes: event.target.value }))} />
+            </Campo>
+            <button className="primary" type="submit" disabled={dispSaving}>{dispSaving ? 'Salvando...' : 'Registrar alteração'}</button>
+          </form>
+
+          <div className="availability-grid">
+            <div>
+              <h4>Controle visual na agenda</h4>
+              {disponibilidadePorHorario.length === 0 && <p className="muted">Nenhuma exceção registrada para esta data.</p>}
+              {disponibilidadePorHorario.map((item) => (
+                <div className="availability-slot" key={item.horario}>
+                  <strong>{item.horario}</strong>
+                  {item.regras.map((regra) => (
+                    <span key={regra.id} className={regra.disponivel ? 'ok' : 'blocked'}>
+                      {regra.disponivel ? '✓' : '✕'} {regra.funcionario}
+                      {!regra.disponivel && regra.substituto ? ` → substituída por ${regra.substituto}` : ''}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <h4>Histórico de alterações</h4>
+              <div className="availability-history">
+                {dispLoading && <p className="muted">Carregando...</p>}
+                {!dispLoading && disponibilidade.length === 0 && <p className="muted">Sem alterações registradas.</p>}
+                {disponibilidade.map((regra) => (
+                  <div className="history-row" key={regra.id}>
+                    <div>
+                      <strong>{regra.funcionario}</strong>
+                      <span>{formatarData(regra.data)} · {formatarHora(regra.hora_inicio)}-{formatarHora(regra.hora_fim)}</span>
+                      <small>{regra.disponivel ? 'Disponível' : `Indisponível${regra.substituto ? ` · substituta: ${regra.substituto}` : ''}`}</small>
+                      {(regra.motivo || regra.observacoes) && <em>{[regra.motivo, regra.observacoes].filter(Boolean).join(' · ')}</em>}
+                    </div>
+                    <button type="button" onClick={() => removerDisponibilidade(regra.id)}>Remover</button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 

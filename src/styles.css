@@ -381,6 +381,126 @@ td small {
   border-radius: 10px;
 }
 
+.availability-board {
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #eadfD2;
+  border-radius: 10px;
+  background: #fffdfa;
+}
+
+.availability-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.availability-head h3 {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.availability-head p,
+.availability-head span,
+.muted {
+  margin: 0;
+  color: #746454;
+  font-size: 14px;
+}
+
+.availability-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  border: 1px solid #eadfD2;
+  border-radius: 10px;
+  background: #fbf7f1;
+}
+
+.availability-form .field {
+  margin-bottom: 0;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.availability-grid h4 {
+  margin: 0 0 10px;
+  color: #3a3027;
+  font-size: 15px;
+}
+
+.availability-slot {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee4d8;
+}
+
+.availability-slot strong {
+  color: #6f4d29;
+  font-size: 13px;
+}
+
+.availability-slot span {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.availability-slot .ok {
+  color: #166534;
+}
+
+.availability-slot .blocked {
+  color: #991b1b;
+}
+
+.availability-history {
+  display: grid;
+  gap: 8px;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #eee4d8;
+  border-radius: 8px;
+  background: #fbf7f1;
+}
+
+.history-row strong,
+.history-row span,
+.history-row small,
+.history-row em {
+  display: block;
+}
+
+.history-row span,
+.history-row small,
+.history-row em {
+  margin-top: 3px;
+  color: #746454;
+  font-size: 12px;
+}
+
+.history-row em {
+  font-style: normal;
+}
+
 .empty {
   padding: 34px;
   text-align: center;
@@ -676,6 +796,11 @@ td small {
     display: grid;
   }
 
+  .availability-form,
+  .availability-grid {
+    grid-template-columns: 1fr;
+  }
+
   .schedule-head {
     grid-template-columns: 1fr;
   }
@@ -690,7 +815,7 @@ td small {
     padding: 18px;
   }
 
-  .stats-grid, .info-grid, .two-cols, .whatsapp-selected, .whatsapp-row {
+  .stats-grid, .info-grid, .two-cols, .whatsapp-selected, .whatsapp-row, .history-row {
     grid-template-columns: 1fr;
   }
 
