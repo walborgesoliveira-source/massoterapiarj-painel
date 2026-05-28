@@ -4,26 +4,41 @@ import Modal from '../components/Modal';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
-const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu'];
+const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu', 'Excluído'];
 
 const TURNOS_PADRAO = [
-  { id: 'turno_manha', label: 'Manhã & Tarde',  inicio: '09:00', fim: '15:30' },
-  { id: 'turno_tarde', label: 'Tarde & Noite',   inicio: '15:30', fim: '20:30' },
+  { id: 'quinta_28', label: 'Quinta 28/05', inicio: '12:00', fim: '20:30' },
+  { id: 'sexta_29_amanda', label: 'Sexta 29/05 · Amanda', inicio: '12:00', fim: '14:00' },
+  { id: 'sexta_29_equipe', label: 'Sexta 29/05 · Amanda e Diana', inicio: '14:00', fim: '20:30' },
+  { id: 'sabado_30', label: 'Sábado 30/05', inicio: '09:00', fim: '19:00' },
 ];
 
 const PROFS_TURNOS_PADRAO = [
-  { nome: 'Ellaine', turno: 'turno_manha', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Selma',   turno: 'turno_manha', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Fabiola', turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Diana',   turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Amanda',  turno: 'turno_tarde', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Ellaine', turno: 'quinta_28', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma', turno: 'quinta_28', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda', turno: 'sexta_29_amanda', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda', turno: 'sexta_29_equipe', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'sexta_29_equipe', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'sabado_30', cargo: 'Massoterapeuta clínica' },
 ];
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
+const ESCALA_OFICIAL = {
+  '2026-05-28': [
+    { inicio: '12:00', fim: '20:30', profissionais: ['Ellaine', 'Selma'] },
+  ],
+  '2026-05-29': [
+    { inicio: '12:00', fim: '14:00', profissionais: ['Amanda'] },
+    { inicio: '14:00', fim: '20:30', profissionais: ['Amanda', 'Diana'] },
+  ],
+  '2026-05-30': [
+    { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
+  ],
+};
 const DISPONIBILIDADE_INICIAL = {
   data: hojeISO(),
-  hora_inicio: '09:00',
-  hora_fim: '15:30',
+  hora_inicio: '12:00',
+  hora_fim: '20:30',
   funcionario: 'Amanda',
   disponivel: false,
   substituto: '',
@@ -39,6 +54,7 @@ const STATUS_CLASS = {
   Cancelado: 'danger',
   Concluído: 'done',
   'Não compareceu': 'danger',
+  Excluído: 'danger',
 };
 
 const COLABORADORES_PADRAO = [
@@ -51,18 +67,28 @@ const COLABORADORES_PADRAO = [
 ];
 
 const HORARIOS_AGENDA = [
-  '08:00',
   '09:00',
+  '09:30',
   '10:00',
+  '10:30',
   '11:00',
+  '11:30',
   '12:00',
+  '12:30',
   '13:00',
+  '13:30',
   '14:00',
+  '14:30',
   '15:00',
+  '15:30',
   '16:00',
+  '16:30',
   '17:00',
+  '17:30',
   '18:00',
+  '18:30',
   '19:00',
+  '19:30',
   '20:00',
 ];
 
@@ -107,11 +133,34 @@ function horarioChave(row) {
 }
 
 function statusContaComoLivre(status) {
-  return ['Cancelado', 'Recusado', 'Não compareceu'].includes(status);
+  return ['Cancelado', 'Recusado', 'Não compareceu', 'Excluído'].includes(status);
 }
 
 function horarioDentroIntervalo(horario, inicio, fim) {
   return horario >= normalizarHoraCampo(inicio) && horario < normalizarHoraCampo(fim);
+}
+
+function profissionaisDaEscala(data, horario) {
+  const blocos = ESCALA_OFICIAL[data] || [];
+  const nomes = blocos
+    .filter((bloco) => horarioDentroIntervalo(horario, bloco.inicio, bloco.fim))
+    .flatMap((bloco) => bloco.profissionais);
+  return [...new Set(nomes)];
+}
+
+function profissionaisDisponiveis(data, horario, regras = []) {
+  const mapa = new Map(profissionaisDaEscala(data, horario).map((nome) => [nome, nome]));
+  regras
+    .filter((regra) => horarioDentroIntervalo(horario, regra.hora_inicio, regra.hora_fim))
+    .forEach((regra) => {
+      if (regra.disponivel === false) {
+        mapa.delete(regra.funcionario);
+        if (regra.substituto) mapa.set(regra.substituto, regra.substituto);
+      } else {
+        mapa.set(regra.funcionario, regra.funcionario);
+      }
+    });
+  return Array.from(mapa.values());
 }
 
 function normalizarHoraCampo(valor) {
@@ -192,12 +241,7 @@ export default function Agenda() {
   const [dispLoading, setDispLoading] = useState(false);
   const [dispSaving, setDispSaving] = useState(false);
   const [dispForm, setDispForm] = useState(() => ({ ...DISPONIBILIDADE_INICIAL, data: hojeISO() }));
-  const [profsTurnos, setProfsTurnos] = useState(() => {
-    try {
-      const s = localStorage.getItem(STORAGE_PROFS_TURNOS);
-      return s ? JSON.parse(s) : PROFS_TURNOS_PADRAO;
-    } catch { return PROFS_TURNOS_PADRAO; }
-  });
+  const [profsTurnos] = useState(PROFS_TURNOS_PADRAO);
 
   const [contaAberta, setContaAberta] = useState(false);
   const [contaForm, setContaForm] = useState({
@@ -233,21 +277,26 @@ export default function Agenda() {
     return HORARIOS_AGENDA.map((horario) => {
       const agendamentos = porHorario[horario] || [];
       const ativos = agendamentos.filter((row) => !statusContaComoLivre(row.status));
+      const profissionais = profissionaisDisponiveis(data, horario, disponibilidade);
       return {
         horario,
         agendamentos,
         principal: ativos[0] || agendamentos[0] || null,
         ocupado: ativos.length > 0,
+        profissionais,
+        semAtendimento: profissionais.length === 0,
       };
     });
-  }, [agendaDia]);
+  }, [agendaDia, data, disponibilidade]);
 
   const resumoAgendaDia = useMemo(() => {
     const ocupados = slotsAgenda.filter((slot) => slot.ocupado).length;
+    const semAtendimento = slotsAgenda.filter((slot) => slot.semAtendimento).length;
     const semProfissional = agendaDia.filter((row) => !row.colaborador && !statusContaComoLivre(row.status)).length;
     return {
-      livres: slotsAgenda.length - ocupados,
+      livres: slotsAgenda.length - ocupados - semAtendimento,
       ocupados,
+      semAtendimento,
       semProfissional,
     };
   }, [agendaDia, slotsAgenda]);
@@ -363,13 +412,9 @@ export default function Agenda() {
     });
   }
 
-  function mudarTurnoProfissional(nome, novoTurno) {
-    setProfsTurnos((atual) => atual.map((p) => p.nome === nome ? { ...p, turno: novoTurno } : p));
-  }
-
   function salvarTurnos(event) {
     event.preventDefault();
-    localStorage.setItem(STORAGE_PROFS_TURNOS, JSON.stringify(profsTurnos));
+    localStorage.setItem(STORAGE_PROFS_TURNOS, JSON.stringify(PROFS_TURNOS_PADRAO));
     setTurnosAberto(false);
   }
 
@@ -511,6 +556,7 @@ export default function Agenda() {
           <div className="schedule-summary">
             <span><strong>{resumoAgendaDia.livres}</strong> livres</span>
             <span><strong>{resumoAgendaDia.ocupados}</strong> agendados</span>
+            <span><strong>{resumoAgendaDia.semAtendimento}</strong> sem atendimento</span>
             <span><strong>{resumoAgendaDia.semProfissional}</strong> sem profissional</span>
           </div>
           <div className="schedule-grid">
@@ -518,7 +564,7 @@ export default function Agenda() {
               <button
                 key={slot.horario}
                 type="button"
-                className={slot.ocupado ? 'schedule-slot booked' : 'schedule-slot free'}
+                className={slot.semAtendimento ? 'schedule-slot blocked' : slot.ocupado ? 'schedule-slot booked' : 'schedule-slot free'}
                 onClick={() => slot.principal && abrir(slot.principal)}
                 disabled={!slot.principal}
               >
@@ -530,8 +576,8 @@ export default function Agenda() {
                   </>
                 ) : (
                   <>
-                    <strong>Livre</strong>
-                    <small>Sem atendimento</small>
+                    <strong>{slot.semAtendimento ? '❌ Sem Atendimento' : 'Livre'}</strong>
+                    <small>{slot.semAtendimento ? 'Fora da escala oficial' : slot.profissionais.join(', ')}</small>
                   </>
                 )}
               </button>
@@ -807,10 +853,10 @@ export default function Agenda() {
         >
           <form onSubmit={salvarTurnos} className="modal-grid">
             <p style={{ color: '#8c7b6a', fontSize: 13, margin: 0 }}>
-              Altere o turno de cada profissional. A mudança é aplicada no site de agendamento sem necessidade de deploy.
+              Escala fixa da agenda oficial. Horários sem profissional aparecem como Sem Atendimento no site e no painel.
             </p>
             {profsTurnos.map((prof) => (
-              <div key={prof.nome} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div key={`${prof.nome}-${prof.turno}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
                   width: 36, height: 36, borderRadius: '50%',
                   background: 'rgba(184,137,90,0.15)',
@@ -820,7 +866,7 @@ export default function Agenda() {
                 <div style={{ flex: 1 }}>
                   <label className="field">
                     <span>{prof.nome}</span>
-                    <select value={prof.turno} onChange={(e) => mudarTurnoProfissional(prof.nome, e.target.value)}>
+                    <select value={prof.turno} disabled>
                       {TURNOS_PADRAO.map((t) => (
                         <option key={t.id} value={t.id}>{t.label} ({t.inicio}–{t.fim})</option>
                       ))}
