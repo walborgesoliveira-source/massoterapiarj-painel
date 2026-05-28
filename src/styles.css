@@ -202,6 +202,13 @@ td small {
   color: #746454;
 }
 
+.page-header .page-update {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9a7a5f;
+  font-weight: 700;
+}
+
 .header-actions {
   display: flex;
   gap: 10px;
@@ -309,6 +316,16 @@ td small {
 
 .schedule-slot.booked span {
   color: #9a5b11;
+}
+
+.schedule-slot.blocked {
+  border-color: #ead1d1;
+  background: #fff1f1;
+}
+
+.schedule-slot.blocked span,
+.schedule-slot.blocked strong {
+  color: #9f2f2f;
 }
 
 .schedule-slot:disabled {

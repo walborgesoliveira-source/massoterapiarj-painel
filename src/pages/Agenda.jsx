@@ -167,6 +167,17 @@ function normalizarHoraCampo(valor) {
   return valor ? String(valor).slice(0, 5) : '';
 }
 
+function formatarAtualizacaoBrasilia() {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
+}
+
 function somenteDigitos(valor) {
   return String(valor || '').replace(/\D/g, '');
 }
@@ -281,7 +292,7 @@ export default function Agenda() {
       return {
         horario,
         agendamentos,
-        principal: ativos[0] || agendamentos[0] || null,
+        principal: ativos[0] || null,
         ocupado: ativos.length > 0,
         profissionais,
         semAtendimento: profissionais.length === 0,
@@ -332,7 +343,7 @@ export default function Agenda() {
       .then((response) => {
         const dados = response.data.data || [];
         setAgendaDia(dados);
-        setUltimaAtualizacao(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+        setUltimaAtualizacao(formatarAtualizacaoBrasilia());
       })
       .catch(() => setErro('Nao foi possivel atualizar a agenda do dia.'));
   }
@@ -534,6 +545,7 @@ export default function Agenda() {
           <div>
             <h2>Agendamentos</h2>
             <p>Pedidos recebidos pelo site, aprovacao e aviso manual para colaboradores.</p>
+            <p className="page-update">Atualização: 28/05/2026 18:31</p>
           </div>
           <div className="header-actions">
             <button type="button" onClick={() => setData(ajustarDataISO(data, -1))}>Anterior</button>
@@ -547,7 +559,7 @@ export default function Agenda() {
           <div className="schedule-head">
             <div>
               <h3>Agenda do dia</h3>
-              <p>{formatarData(data)}{ultimaAtualizacao ? ` - atualizado as ${ultimaAtualizacao}` : ''}</p>
+              <p>{formatarData(data)}{ultimaAtualizacao ? ` - agenda atualizada em ${ultimaAtualizacao} - horário de Brasília` : ''}</p>
             </div>
             <Campo label="Data">
               <input type="date" value={data} onChange={(event) => setData(event.target.value)} />
