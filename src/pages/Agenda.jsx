@@ -5,35 +5,71 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 
 const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu', 'Excluído'];
+const SESSION_MIN = 50;
+const SEM_ATENDIMENTO_MSG = '❌ Sem Atendimento! Agenda em atualização! 📱 Entre em contato pelo nosso WhatsApp para agendar.';
+const ESCALA_OFICIAL_VIGENCIA = '08/06/2026 a 14/06/2026';
 
 const TURNOS_PADRAO = [
-  { id: 'quinta_28', label: 'Quinta 28/05', inicio: '12:00', fim: '20:30' },
-  { id: 'sexta_29_amanda', label: 'Sexta 29/05 · Amanda', inicio: '12:00', fim: '14:00' },
-  { id: 'sexta_29_equipe', label: 'Sexta 29/05 · Amanda e Diana', inicio: '14:00', fim: '20:30' },
-  { id: 'sabado_30', label: 'Sábado 30/05', inicio: '09:00', fim: '19:00' },
+  { id: 'segunda_diana', label: 'Segunda · Diana', inicio: '09:00', fim: '12:00' },
+  { id: 'segunda_equipe', label: 'Segunda · Amanda e Fabíola', inicio: '12:00', fim: '20:30' },
+  { id: 'terca_diana', label: 'Terça · Diana', inicio: '09:00', fim: '15:30' },
+  { id: 'terca_ellaine', label: 'Terça · Ellaine', inicio: '11:00', fim: '19:00' },
+  { id: 'terca_selma', label: 'Terça · Selma', inicio: '15:30', fim: '20:30' },
+  { id: 'quarta_diana', label: 'Quarta · Diana', inicio: '09:00', fim: '20:30' },
+  { id: 'quarta_selma', label: 'Quarta · Selma', inicio: '12:00', fim: '20:30' },
+  { id: 'quinta_selma', label: 'Quinta · Selma', inicio: '10:00', fim: '20:30' },
+  { id: 'quinta_ellaine', label: 'Quinta · Ellaine', inicio: '11:00', fim: '19:00' },
+  { id: 'sexta_diana', label: 'Sexta · Diana', inicio: '09:00', fim: '15:30' },
+  { id: 'sexta_fabiola', label: 'Sexta · Fabíola', inicio: '10:00', fim: '20:30' },
+  { id: 'sexta_amanda', label: 'Sexta · Amanda', inicio: '15:30', fim: '20:30' },
+  { id: 'sabado_diana', label: 'Sábado · Diana', inicio: '09:00', fim: '19:00' },
 ];
 
 const PROFS_TURNOS_PADRAO = [
-  { nome: 'Ellaine', turno: 'quinta_28', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Selma', turno: 'quinta_28', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Amanda', turno: 'sexta_29_amanda', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Amanda', turno: 'sexta_29_equipe', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Diana', turno: 'sexta_29_equipe', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Diana', turno: 'sabado_30', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'segunda_diana', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda', turno: 'segunda_equipe', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Fabíola', turno: 'segunda_equipe', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'terca_diana', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Ellaine', turno: 'terca_ellaine', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma', turno: 'terca_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'quarta_diana', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma', turno: 'quarta_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma', turno: 'quinta_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Ellaine', turno: 'quinta_ellaine', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'sexta_diana', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Fabíola', turno: 'sexta_fabiola', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda', turno: 'sexta_amanda', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Diana', turno: 'sabado_diana', cargo: 'Massoterapeuta clínica' },
 ];
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
 const ESCALA_OFICIAL = {
-  '2026-05-28': [
-    { inicio: '12:00', fim: '20:30', profissionais: ['Ellaine', 'Selma'] },
+  '2026-06-08': [
+    { inicio: '09:00', fim: '12:00', profissionais: ['Diana'] },
+    { inicio: '12:00', fim: '20:30', profissionais: ['Amanda', 'Fabíola'] },
   ],
-  '2026-05-29': [
-    { inicio: '12:00', fim: '14:00', profissionais: ['Amanda'] },
-    { inicio: '14:00', fim: '20:30', profissionais: ['Amanda', 'Diana'] },
+  '2026-06-09': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
   ],
-  '2026-05-30': [
+  '2026-06-10': [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Diana'] },
+    { inicio: '12:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-06-11': [
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
+  ],
+  '2026-06-12': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
+    { inicio: '10:00', fim: '20:30', profissionais: ['Fabíola'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Amanda'] },
+  ],
+  '2026-06-13': [
     { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
   ],
+  '2026-06-14': [],
 };
 const DISPONIBILIDADE_INICIAL = {
   data: hojeISO(),
@@ -60,7 +96,7 @@ const STATUS_CLASS = {
 const COLABORADORES_PADRAO = [
   { nome: 'Selma', whatsapp: '', iniciais: 'SE', avatarClass: 'mint' },
   { nome: 'Ellaine', whatsapp: '21980059845', iniciais: 'EL', avatarClass: 'blue' },
-  { nome: 'Fabiola', whatsapp: '', iniciais: 'FA', avatarClass: 'violet' },
+  { nome: 'Fabíola', whatsapp: '', iniciais: 'FA', avatarClass: 'violet' },
   { nome: 'Diana', whatsapp: '', iniciais: 'DI', avatarClass: 'amber' },
   { nome: 'Amanda', whatsapp: '', iniciais: 'AM', avatarClass: 'coral' },
   { nome: 'Equipe Massoterapia RJ', whatsapp: '', iniciais: 'MR', avatarClass: 'brown' },
@@ -96,7 +132,7 @@ function carregarColaboradores() {
   try {
     const salvos = JSON.parse(localStorage.getItem('mrj_colaboradores_whatsapp') || '[]');
     return COLABORADORES_PADRAO.map((item) => {
-      const salvo = salvos.find((row) => row.nome === item.nome);
+      const salvo = salvos.find((row) => row.nome === item.nome || (item.nome === 'Fabíola' && row.nome === 'Fabiola'));
       return { ...item, whatsapp: salvo?.whatsapp || item.whatsapp };
     });
   } catch {
@@ -137,7 +173,11 @@ function statusContaComoLivre(status) {
 }
 
 function horarioDentroIntervalo(horario, inicio, fim) {
-  return horario >= normalizarHoraCampo(inicio) && horario < normalizarHoraCampo(fim);
+  const inicioMin = minutosDoDia(inicio);
+  const fimMin = minutosDoDia(fim);
+  const horarioMin = minutosDoDia(horario);
+  if (inicioMin === null || fimMin === null || horarioMin === null) return false;
+  return horarioMin >= inicioMin && horarioMin + SESSION_MIN <= fimMin;
 }
 
 function profissionaisDaEscala(data, horario) {
@@ -165,6 +205,38 @@ function profissionaisDisponiveis(data, horario, regras = []) {
 
 function normalizarHoraCampo(valor) {
   return valor ? String(valor).slice(0, 5) : '';
+}
+
+function minutosDoDia(valor) {
+  const [hora, minuto] = normalizarHoraCampo(valor).split(':').map(Number);
+  return Number.isFinite(hora) && Number.isFinite(minuto) ? hora * 60 + minuto : null;
+}
+
+function duracaoAgendamento(valor) {
+  const duracao = Number(valor || SESSION_MIN);
+  return Number.isFinite(duracao) && duracao > 0 ? duracao : SESSION_MIN;
+}
+
+function atendimentoAfetaHorario(row, horario) {
+  if (statusContaComoLivre(row.status)) return false;
+  const inicio = minutosDoDia(row.hora_agendada);
+  const slot = minutosDoDia(horario);
+  if (inicio === null || slot === null) return false;
+  const blocoAtendimento = duracaoAgendamento(row.duracao_media);
+  const blocoSlot = SESSION_MIN;
+  return inicio < slot + blocoSlot && slot < inicio + blocoAtendimento;
+}
+
+function profissionaisOcupadasNoHorario(rows, horario) {
+  return new Set(
+    rows
+      .filter((row) => row.colaborador && atendimentoAfetaHorario(row, horario))
+      .map((row) => row.colaborador)
+  );
+}
+
+function compararHorarios(a, b) {
+  return (minutosDoDia(a) ?? 0) - (minutosDoDia(b) ?? 0);
 }
 
 function formatarAtualizacaoBrasilia() {
@@ -253,6 +325,8 @@ export default function Agenda() {
   const [dispSaving, setDispSaving] = useState(false);
   const [dispForm, setDispForm] = useState(() => ({ ...DISPONIBILIDADE_INICIAL, data: hojeISO() }));
   const [profsTurnos] = useState(PROFS_TURNOS_PADRAO);
+  const escalaDia = ESCALA_OFICIAL[data] || [];
+  const semEscalaOficial = escalaDia.length === 0;
 
   const [contaAberta, setContaAberta] = useState(false);
   const [contaForm, setContaForm] = useState({
@@ -285,17 +359,28 @@ export default function Agenda() {
       return acc;
     }, {});
 
-    return HORARIOS_AGENDA.map((horario) => {
+    const horarios = [...new Set([
+      ...HORARIOS_AGENDA,
+      ...agendaDia
+        .filter((row) => !statusContaComoLivre(row.status))
+        .map(horarioChave)
+        .filter((horario) => horario && horario !== '-'),
+    ])].sort(compararHorarios);
+
+    return horarios.map((horario) => {
       const agendamentos = porHorario[horario] || [];
       const ativos = agendamentos.filter((row) => !statusContaComoLivre(row.status));
       const profissionais = profissionaisDisponiveis(data, horario, disponibilidade);
+      const ocupadas = profissionaisOcupadasNoHorario(agendaDia, horario);
+      const profissionaisLivres = profissionais.filter((nome) => !ocupadas.has(nome));
+      const principal = ativos[0] || null;
       return {
         horario,
         agendamentos,
-        principal: ativos[0] || null,
-        ocupado: ativos.length > 0,
-        profissionais,
-        semAtendimento: profissionais.length === 0,
+        principal,
+        ocupado: Boolean(principal),
+        profissionais: profissionaisLivres,
+        semAtendimento: profissionaisLivres.length === 0,
       };
     });
   }, [agendaDia, data, disponibilidade]);
@@ -545,7 +630,7 @@ export default function Agenda() {
           <div>
             <h2>Agendamentos</h2>
             <p>Pedidos recebidos pelo site, aprovacao e aviso manual para colaboradores.</p>
-            <p className="page-update">Atualização: 28/05/2026 18:31</p>
+            <p className="page-update">Escala oficial: {ESCALA_OFICIAL_VIGENCIA} · America/Sao_Paulo</p>
           </div>
           <div className="header-actions">
             <button type="button" onClick={() => setData(ajustarDataISO(data, -1))}>Anterior</button>
@@ -571,6 +656,11 @@ export default function Agenda() {
             <span><strong>{resumoAgendaDia.semAtendimento}</strong> sem atendimento</span>
             <span><strong>{resumoAgendaDia.semProfissional}</strong> sem profissional</span>
           </div>
+          {semEscalaOficial && (
+            <div className="no-attendance-message">
+              {SEM_ATENDIMENTO_MSG}
+            </div>
+          )}
           <div className="schedule-grid">
             {slotsAgenda.map((slot) => (
               <button

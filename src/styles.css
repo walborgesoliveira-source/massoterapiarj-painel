@@ -266,6 +266,17 @@ td small {
   color: #2b2520;
 }
 
+.no-attendance-message {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #ead1d1;
+  border-radius: 8px;
+  background: #fff1f1;
+  color: #8f2424;
+  font-size: 14px;
+  font-weight: 800;
+}
+
 .schedule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
