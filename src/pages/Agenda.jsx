@@ -7,7 +7,7 @@ import api from '../services/api';
 const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu', 'Excluído'];
 const SESSION_MIN = 50;
 const SEM_ATENDIMENTO_MSG = '❌ Sem Atendimento! Agenda em atualização! 📱 Entre em contato pelo nosso WhatsApp para agendar.';
-const ESCALA_OFICIAL_VIGENCIA = '08/06/2026 a 14/06/2026';
+const ESCALA_OFICIAL_VIGENCIA = '15/06/2026 a 20/06/2026';
 
 const TURNOS_PADRAO = [
   { id: 'segunda_diana', label: 'Segunda · Diana', inicio: '09:00', fim: '12:00' },
@@ -44,32 +44,31 @@ const PROFS_TURNOS_PADRAO = [
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
 const ESCALA_OFICIAL = {
-  '2026-06-08': [
+  '2026-06-15': [
     { inicio: '09:00', fim: '12:00', profissionais: ['Diana'] },
     { inicio: '12:00', fim: '20:30', profissionais: ['Amanda', 'Fabíola'] },
   ],
-  '2026-06-09': [
+  '2026-06-16': [
     { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
     { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
     { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
   ],
-  '2026-06-10': [
+  '2026-06-17': [
     { inicio: '09:00', fim: '20:30', profissionais: ['Diana'] },
     { inicio: '12:00', fim: '20:30', profissionais: ['Selma'] },
   ],
-  '2026-06-11': [
+  '2026-06-18': [
     { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
     { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
   ],
-  '2026-06-12': [
+  '2026-06-19': [
     { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
     { inicio: '10:00', fim: '20:30', profissionais: ['Fabíola'] },
     { inicio: '15:30', fim: '20:30', profissionais: ['Amanda'] },
   ],
-  '2026-06-13': [
+  '2026-06-20': [
     { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
   ],
-  '2026-06-14': [],
 };
 const DISPONIBILIDADE_INICIAL = {
   data: hojeISO(),
