@@ -826,18 +826,18 @@ export default function Agenda() {
               {!loading && rows.length === 0 && <tr><td colSpan="6" className="empty">Nenhum agendamento encontrado.</td></tr>}
               {!loading && rows.map((row) => (
                 <tr key={row.id}>
-                  <td>
+                  <td data-label="Horario">
                     <strong>{formatarHora(row.hora_agendada)}</strong>
                     <small>{formatarData(row.data_agendada)}</small>
                   </td>
-                  <td>
+                  <td data-label="Cliente">
                     <strong>{row.nome_cliente}</strong>
                     <small>{contato(row)}</small>
                   </td>
-                  <td>{row.servico}</td>
-                  <td><span className={`badge ${STATUS_CLASS[row.status] || ''}`}>{row.status}</span></td>
-                  <td>{row.colaborador || '-'}</td>
-                  <td><button type="button" onClick={() => abrir(row)}>Abrir</button></td>
+                  <td data-label="Servico">{row.servico}</td>
+                  <td data-label="Status"><span className={`badge ${STATUS_CLASS[row.status] || ''}`}>{row.status}</span></td>
+                  <td data-label="Colaborador">{row.colaborador || '-'}</td>
+                  <td data-label="Acoes"><button type="button" onClick={() => abrir(row)}>Abrir</button></td>
                 </tr>
               ))}
             </tbody>
