@@ -14,7 +14,7 @@ const TURNOS_PADRAO = [
   { id: 'segunda_equipe', label: 'Segunda · Amanda e Fabíola', inicio: '12:00', fim: '20:30' },
   { id: 'terca_diana', label: 'Terça · Diana', inicio: '09:00', fim: '15:30' },
   { id: 'terca_ellaine', label: 'Terça · Ellaine', inicio: '11:00', fim: '19:00' },
-  { id: 'terca_selma', label: 'Terça · Selma', inicio: '15:30', fim: '20:30' },
+  { id: 'terca_selma', label: 'Terça · Selma', inicio: '11:30', fim: '20:30' },
   { id: 'quarta_diana', label: 'Quarta · Diana', inicio: '09:00', fim: '20:30' },
   { id: 'quarta_selma', label: 'Quarta · Selma', inicio: '12:00', fim: '20:30' },
   { id: 'quinta_selma', label: 'Quinta · Selma', inicio: '10:00', fim: '20:30' },
@@ -51,7 +51,7 @@ const ESCALA_OFICIAL = {
   '2026-06-16': [
     { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
     { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
-    { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:30', fim: '20:30', profissionais: ['Selma'] },
   ],
   '2026-06-17': [
     { inicio: '09:00', fim: '20:30', profissionais: ['Diana'] },
