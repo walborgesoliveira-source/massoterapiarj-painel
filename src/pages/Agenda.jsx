@@ -320,6 +320,7 @@ export default function Agenda() {
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState('');
   const [turnosAberto, setTurnosAberto] = useState(false);
   const [disponibilidade, setDisponibilidade] = useState([]);
+  const [horariosDisponiveis, setHorariosDisponiveis] = useState([]);
   const [dispLoading, setDispLoading] = useState(false);
   const [dispSaving, setDispSaving] = useState(false);
   const [dispForm, setDispForm] = useState(() => ({ ...DISPONIBILIDADE_INICIAL, data: hojeISO() }));
@@ -360,6 +361,7 @@ export default function Agenda() {
 
     const horarios = [...new Set([
       ...HORARIOS_AGENDA,
+      ...horariosDisponiveis.map((slot) => slot.hora).filter(Boolean),
       ...agendaDia
         .filter((row) => !statusContaComoLivre(row.status))
         .map(horarioChave)
@@ -369,9 +371,12 @@ export default function Agenda() {
     return horarios.map((horario) => {
       const agendamentos = porHorario[horario] || [];
       const ativos = agendamentos.filter((row) => !statusContaComoLivre(row.status));
-      const profissionais = profissionaisDisponiveis(data, horario, disponibilidade);
-      const ocupadas = profissionaisOcupadasNoHorario(agendaDia, horario);
-      const profissionaisLivres = profissionais.filter((nome) => !ocupadas.has(nome));
+      const disponibilidadeFinal = horariosDisponiveis.find((slot) => slot.hora === horario);
+      const profissionais = disponibilidadeFinal?.profissionais || profissionaisDisponiveis(data, horario, disponibilidade);
+      const ocupadas = disponibilidadeFinal
+        ? new Set(disponibilidadeFinal.profissionais_ocupados || [])
+        : profissionaisOcupadasNoHorario(agendaDia, horario);
+      const profissionaisLivres = disponibilidadeFinal?.profissionais_livres || profissionais.filter((nome) => !ocupadas.has(nome));
       const principal = ativos[0] || null;
       return {
         horario,
@@ -379,10 +384,10 @@ export default function Agenda() {
         principal,
         ocupado: Boolean(principal),
         profissionais: profissionaisLivres,
-        semAtendimento: profissionaisLivres.length === 0,
+        semAtendimento: disponibilidadeFinal ? !disponibilidadeFinal.disponivel : profissionaisLivres.length === 0,
       };
     });
-  }, [agendaDia, data, disponibilidade]);
+  }, [agendaDia, data, disponibilidade, horariosDisponiveis]);
 
   const resumoAgendaDia = useMemo(() => {
     const ocupados = slotsAgenda.filter((slot) => slot.ocupado).length;
@@ -443,6 +448,15 @@ export default function Agenda() {
       .finally(() => setDispLoading(false));
   }
 
+  function carregarHorariosDisponiveis() {
+    if (!data) return Promise.resolve();
+    return api.get('/agendamentos/horarios-disponiveis', { params: { data, duracao: SESSION_MIN } })
+      .then((response) => {
+        setHorariosDisponiveis(response.data.horarios || []);
+      })
+      .catch(() => setErro('Nao foi possivel carregar os horarios disponiveis.'))
+  }
+
   useEffect(() => {
     carregar();
   }, [status, data]);
@@ -450,6 +464,7 @@ export default function Agenda() {
   useEffect(() => {
     carregarAgendaDia();
     carregarDisponibilidade();
+    carregarHorariosDisponiveis();
     const timer = window.setInterval(carregarAgendaDia, 30000);
     return () => window.clearInterval(timer);
   }, [data]);
@@ -529,6 +544,7 @@ export default function Agenda() {
         hora_fim: current.hora_fim,
       }));
       await carregarDisponibilidade();
+      await carregarHorariosDisponiveis();
     } catch (error) {
       setErro(error.response?.data?.erros?.join(' ') || error.response?.data?.erro || 'Nao foi possivel salvar a disponibilidade.');
     } finally {
@@ -541,6 +557,7 @@ export default function Agenda() {
     try {
       await api.delete(`/agendamentos/colaboradores-disponibilidade/${id}`);
       await carregarDisponibilidade();
+      await carregarHorariosDisponiveis();
     } catch (error) {
       setErro(error.response?.data?.erro || 'Nao foi possivel remover a disponibilidade.');
     }
