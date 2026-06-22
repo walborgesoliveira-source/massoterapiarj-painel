@@ -7,14 +7,14 @@ import api from '../services/api';
 const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu', 'Excluído'];
 const SESSION_MIN = 50;
 const SEM_ATENDIMENTO_MSG = '❌ Sem Atendimento! Agenda em atualização! 📱 Entre em contato pelo nosso WhatsApp para agendar.';
-const ESCALA_OFICIAL_VIGENCIA = '15/06/2026 a 20/06/2026';
+const ESCALA_OFICIAL_VIGENCIA = 'semanal recorrente';
 
 const TURNOS_PADRAO = [
-  { id: 'segunda_diana', label: 'Segunda · Diana', inicio: '09:00', fim: '12:00' },
-  { id: 'segunda_equipe', label: 'Segunda · Amanda e Fabíola', inicio: '12:00', fim: '20:30' },
+  { id: 'segunda_diana', label: 'Segunda · Diana', inicio: '09:00', fim: '20:30' },
+  { id: 'segunda_amanda', label: 'Segunda · Amanda', inicio: '12:00', fim: '20:30' },
   { id: 'terca_diana', label: 'Terça · Diana', inicio: '09:00', fim: '15:30' },
   { id: 'terca_ellaine', label: 'Terça · Ellaine', inicio: '11:00', fim: '19:00' },
-  { id: 'terca_selma', label: 'Terça · Selma', inicio: '11:30', fim: '20:30' },
+  { id: 'terca_selma', label: 'Terça · Selma', inicio: '15:30', fim: '20:30' },
   { id: 'quarta_diana', label: 'Quarta · Diana', inicio: '09:00', fim: '20:30' },
   { id: 'quarta_selma', label: 'Quarta · Selma', inicio: '12:00', fim: '20:30' },
   { id: 'quinta_selma', label: 'Quinta · Selma', inicio: '10:00', fim: '20:30' },
@@ -27,8 +27,7 @@ const TURNOS_PADRAO = [
 
 const PROFS_TURNOS_PADRAO = [
   { nome: 'Diana', turno: 'segunda_diana', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Amanda', turno: 'segunda_equipe', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Fabíola', turno: 'segunda_equipe', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Amanda', turno: 'segunda_amanda', cargo: 'Massoterapeuta clínica' },
   { nome: 'Diana', turno: 'terca_diana', cargo: 'Massoterapeuta clínica' },
   { nome: 'Ellaine', turno: 'terca_ellaine', cargo: 'Massoterapeuta clínica' },
   { nome: 'Selma', turno: 'terca_selma', cargo: 'Massoterapeuta clínica' },
@@ -43,33 +42,40 @@ const PROFS_TURNOS_PADRAO = [
 ];
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
-const ESCALA_OFICIAL = {
-  '2026-06-15': [
-    { inicio: '09:00', fim: '12:00', profissionais: ['Diana'] },
-    { inicio: '12:00', fim: '20:30', profissionais: ['Amanda', 'Fabíola'] },
+const ESCALA_SEMANAL_OFICIAL = {
+  1: [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Diana'] },
+    { inicio: '12:00', fim: '20:30', profissionais: ['Amanda'] },
   ],
-  '2026-06-16': [
+  2: [
     { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
     { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
-    { inicio: '11:30', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
   ],
-  '2026-06-17': [
+  3: [
     { inicio: '09:00', fim: '20:30', profissionais: ['Diana'] },
     { inicio: '12:00', fim: '20:30', profissionais: ['Selma'] },
   ],
-  '2026-06-18': [
+  4: [
     { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
     { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
   ],
-  '2026-06-19': [
+  5: [
     { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
     { inicio: '10:00', fim: '20:30', profissionais: ['Fabíola'] },
     { inicio: '15:30', fim: '20:30', profissionais: ['Amanda'] },
   ],
-  '2026-06-20': [
+  6: [
     { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
   ],
 };
+
+function escalaOficialDaData(data) {
+  const [ano, mes, dia] = String(data || '').split('-').map(Number);
+  if (!ano || !mes || !dia) return [];
+  const diaDaSemana = new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+  return ESCALA_SEMANAL_OFICIAL[diaDaSemana] || [];
+}
 const DISPONIBILIDADE_INICIAL = {
   data: hojeISO(),
   hora_inicio: '12:00',
@@ -180,7 +186,7 @@ function horarioDentroIntervalo(horario, inicio, fim) {
 }
 
 function profissionaisDaEscala(data, horario) {
-  const blocos = ESCALA_OFICIAL[data] || [];
+  const blocos = escalaOficialDaData(data);
   const nomes = blocos
     .filter((bloco) => horarioDentroIntervalo(horario, bloco.inicio, bloco.fim))
     .flatMap((bloco) => bloco.profissionais);
@@ -325,7 +331,7 @@ export default function Agenda() {
   const [dispSaving, setDispSaving] = useState(false);
   const [dispForm, setDispForm] = useState(() => ({ ...DISPONIBILIDADE_INICIAL, data: hojeISO() }));
   const [profsTurnos] = useState(PROFS_TURNOS_PADRAO);
-  const escalaDia = ESCALA_OFICIAL[data] || [];
+  const escalaDia = escalaOficialDaData(data);
   const semEscalaOficial = escalaDia.length === 0;
 
   const [contaAberta, setContaAberta] = useState(false);
