@@ -70,7 +70,33 @@ const ESCALA_SEMANAL_OFICIAL = {
   ],
 };
 
+const ESCALA_POR_DATA_OFICIAL = {
+  '2026-06-30': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
+    { inicio: '09:00', fim: '20:30', profissionais: ['Ellaine'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-07-01': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Fabíola'] },
+  ],
+  '2026-07-02': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Ellaine'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '15:30', fim: '20:30', profissionais: ['Amanda'] },
+  ],
+  '2026-07-03': [
+    { inicio: '09:00', fim: '15:30', profissionais: ['Diana'] },
+    { inicio: '12:00', fim: '20:30', profissionais: ['Fabíola'] },
+  ],
+  '2026-07-04': [
+    { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
+  ],
+};
+
 function escalaOficialDaData(data) {
+  if (ESCALA_POR_DATA_OFICIAL[data]) return ESCALA_POR_DATA_OFICIAL[data];
   const [ano, mes, dia] = String(data || '').split('-').map(Number);
   if (!ano || !mes || !dia) return [];
   const diaDaSemana = new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
