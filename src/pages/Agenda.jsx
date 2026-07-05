@@ -93,6 +93,28 @@ const ESCALA_POR_DATA_OFICIAL = {
   '2026-07-04': [
     { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
   ],
+  '2026-07-06': [
+    { inicio: '12:00', fim: '20:30', profissionais: ['Amanda'] },
+    { inicio: '14:00', fim: '20:30', profissionais: ['Fabíola'] },
+  ],
+  '2026-07-07': [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Ellaine'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-07-08': [
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '12:00', fim: '20:30', profissionais: ['Fabíola'] },
+  ],
+  '2026-07-09': [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Ellaine'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-07-10': [
+    { inicio: '12:00', fim: '20:30', profissionais: ['Amanda', 'Fabíola'] },
+  ],
+  '2026-07-11': [
+    { inicio: '09:00', fim: '19:00', profissionais: ['Diana'] },
+  ],
 };
 
 function escalaOficialDaData(data) {
