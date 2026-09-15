@@ -152,6 +152,47 @@ const ESCALA_POR_DATA_OFICIAL = {
   ],
   '2026-08-15': [{ inicio: '09:00', fim: '18:00', profissionais: ['Júlio César'] }],
   '2026-08-16': [],
+  '2026-09-07': [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Júlio César'] },
+  ],
+  '2026-09-08': [
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
+  ],
+  '2026-09-09': [
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
+  ],
+  '2026-09-10': [
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
+  ],
+  '2026-09-11': [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Júlio César'] },
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-12': [{ inicio: '09:00', fim: '17:00', profissionais: ['Júlio César'] }],
+  '2026-09-14': [
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '14:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-15': [
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-16': [
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-17': [
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-18': [
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  '2026-09-19': [{ inicio: '09:00', fim: '16:00', profissionais: ['Júlio César'] }],
 };
 
 function escalaOficialDaData(data) {
