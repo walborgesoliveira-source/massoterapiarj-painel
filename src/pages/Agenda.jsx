@@ -7,67 +7,81 @@ import api from '../services/api';
 const STATUS = ['Pendente', 'Aprovado', 'Recusado', 'Reagendado', 'Cancelado', 'Concluído', 'Não compareceu', 'Excluído'];
 const SESSION_MIN = 50;
 const SEM_ATENDIMENTO_MSG = '❌ Sem Atendimento! Agenda em atualização! 📱 Entre em contato pelo nosso WhatsApp para agendar.';
-const ESCALA_OFICIAL_VIGENCIA = 'exceção por data de 10/08/2026 a 16/08/2026';
+const ESCALA_OFICIAL_VIGENCIA = 'semanal vigente a partir de 05/10/2026';
 
 const TURNOS_PADRAO = [
-  { id: 'segunda_julio', label: 'Segunda · Júlio César', inicio: '09:00', fim: '20:00' },
-  { id: 'terca_julio', label: 'Terça · Júlio César', inicio: '09:00', fim: '11:00' },
-  { id: 'terca_ellaine', label: 'Terça · Ellaine', inicio: '11:00', fim: '20:00' },
-  { id: 'terca_selma', label: 'Terça · Selma', inicio: '11:00', fim: '20:00' },
-  { id: 'quarta_julio', label: 'Quarta · Júlio César', inicio: '09:00', fim: '11:00' },
-  { id: 'quarta_ellaine', label: 'Quarta · Ellaine', inicio: '11:00', fim: '20:00' },
-  { id: 'quarta_selma', label: 'Quarta · Selma', inicio: '11:00', fim: '20:00' },
-  { id: 'quinta_julio', label: 'Quinta · Júlio César', inicio: '09:00', fim: '11:00' },
-  { id: 'quinta_ellaine', label: 'Quinta · Ellaine', inicio: '11:00', fim: '20:00' },
-  { id: 'quinta_selma', label: 'Quinta · Selma', inicio: '11:00', fim: '20:00' },
-  { id: 'sexta_julio', label: 'Sexta · Júlio César', inicio: '09:00', fim: '20:00' },
-  { id: 'sexta_ellaine', label: 'Sexta · Ellaine', inicio: '11:00', fim: '20:00' },
-  { id: 'sexta_selma', label: 'Sexta · Selma', inicio: '14:00', fim: '20:00' },
-  { id: 'sabado_julio', label: 'Sábado · Júlio César', inicio: '09:00', fim: '18:00' },
+  { id: 'segunda_selma', label: 'Segunda · Selma', inicio: '14:00', fim: '20:30' },
+  { id: 'segunda_julio', label: 'Segunda · Júlio César', inicio: '11:00', fim: '18:00' },
+  { id: 'terca_ellaine', label: 'Terça · Ellaine', inicio: '11:00', fim: '19:00' },
+  { id: 'terca_selma', label: 'Terça · Selma', inicio: '11:00', fim: '20:30' },
+  { id: 'terca_julio', label: 'Terça · Júlio César', inicio: '11:00', fim: '18:00' },
+  { id: 'quarta_ellaine', label: 'Quarta · Ellaine', inicio: '11:00', fim: '19:00' },
+  { id: 'quarta_selma', label: 'Quarta · Selma', inicio: '11:00', fim: '20:30' },
+  { id: 'quarta_julio', label: 'Quarta · Júlio César', inicio: '11:00', fim: '18:00' },
+  { id: 'quinta_ellaine', label: 'Quinta · Ellaine', inicio: '11:00', fim: '19:00' },
+  { id: 'quinta_selma', label: 'Quinta · Selma', inicio: '11:00', fim: '20:30' },
+  { id: 'quinta_julio', label: 'Quinta · Júlio César', inicio: '11:00', fim: '18:00' },
+  { id: 'sexta_selma', label: 'Sexta · Selma', inicio: '10:00', fim: '20:30' },
+  { id: 'sexta_julio', label: 'Sexta · Júlio César', inicio: '11:00', fim: '18:00' },
+  { id: 'sabado_julio', label: 'Sábado · Júlio César', inicio: '09:00', fim: '16:00' },
 ];
 
 const PROFS_TURNOS_PADRAO = [
+  { nome: 'Selma', turno: 'segunda_selma', cargo: 'Massoterapeuta clínica' },
   { nome: 'Júlio César', turno: 'segunda_julio', cargo: 'Massoterapeuta' },
-  { nome: 'Júlio César', turno: 'terca_julio', cargo: 'Massoterapeuta' },
   { nome: 'Ellaine', turno: 'terca_ellaine', cargo: 'Massoterapeuta clínica' },
   { nome: 'Selma', turno: 'terca_selma', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Júlio César', turno: 'quarta_julio', cargo: 'Massoterapeuta' },
+  { nome: 'Júlio César', turno: 'terca_julio', cargo: 'Massoterapeuta' },
   { nome: 'Ellaine', turno: 'quarta_ellaine', cargo: 'Massoterapeuta clínica' },
   { nome: 'Selma', turno: 'quarta_selma', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Júlio César', turno: 'quinta_julio', cargo: 'Massoterapeuta' },
-  { nome: 'Selma', turno: 'quinta_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Júlio César', turno: 'quarta_julio', cargo: 'Massoterapeuta' },
   { nome: 'Ellaine', turno: 'quinta_ellaine', cargo: 'Massoterapeuta clínica' },
-  { nome: 'Júlio César', turno: 'sexta_julio', cargo: 'Massoterapeuta' },
-  { nome: 'Ellaine', turno: 'sexta_ellaine', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Selma', turno: 'quinta_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Júlio César', turno: 'quinta_julio', cargo: 'Massoterapeuta' },
   { nome: 'Selma', turno: 'sexta_selma', cargo: 'Massoterapeuta clínica' },
+  { nome: 'Júlio César', turno: 'sexta_julio', cargo: 'Massoterapeuta' },
   { nome: 'Júlio César', turno: 'sabado_julio', cargo: 'Massoterapeuta' },
 ];
 
 const STORAGE_PROFS_TURNOS = 'mrj_profissionais_turnos';
+const ESCALA_SEMANAL_ANTERIOR = {
+  1: [],
+  2: [{ inicio: '11:00', fim: '20:30', profissionais: ['Ellaine', 'Selma'] }],
+  3: [{ inicio: '11:00', fim: '20:30', profissionais: ['Ellaine', 'Selma'] }],
+  4: [{ inicio: '11:00', fim: '20:30', profissionais: ['Ellaine', 'Selma'] }],
+  5: [
+    { inicio: '09:00', fim: '20:30', profissionais: ['Júlio César'] },
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+  ],
+  6: [{ inicio: '09:00', fim: '17:00', profissionais: ['Júlio César'] }],
+};
+
+// Nova escala vigente a partir de 05/10/2026; histórico preservado.
 const ESCALA_SEMANAL_OFICIAL = {
   1: [
-    { inicio: '09:00', fim: '20:00', profissionais: ['Júlio César'] },
+    { inicio: '14:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
   ],
   2: [
-    { inicio: '09:00', fim: '11:00', profissionais: ['Júlio César'] },
-    { inicio: '11:00', fim: '20:00', profissionais: ['Ellaine', 'Selma'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
   ],
   3: [
-    { inicio: '09:00', fim: '11:00', profissionais: ['Júlio César'] },
-    { inicio: '11:00', fim: '20:00', profissionais: ['Ellaine', 'Selma'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
   ],
   4: [
-    { inicio: '09:00', fim: '11:00', profissionais: ['Júlio César'] },
-    { inicio: '11:00', fim: '20:00', profissionais: ['Ellaine', 'Selma'] },
+    { inicio: '11:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
+    { inicio: '11:00', fim: '19:00', profissionais: ['Ellaine'] },
   ],
   5: [
-    { inicio: '09:00', fim: '20:00', profissionais: ['Júlio César'] },
-    { inicio: '11:00', fim: '20:00', profissionais: ['Ellaine'] },
-    { inicio: '14:00', fim: '20:00', profissionais: ['Selma'] },
+    { inicio: '10:00', fim: '20:30', profissionais: ['Selma'] },
+    { inicio: '11:00', fim: '18:00', profissionais: ['Júlio César'] },
   ],
-  6: [
-    { inicio: '09:00', fim: '18:00', profissionais: ['Júlio César'] },
-  ],
+  6: [{ inicio: '09:00', fim: '16:00', profissionais: ['Júlio César'] }],
 };
 
 const ESCALA_POR_DATA_OFICIAL = {
@@ -223,7 +237,7 @@ function escalaOficialDaData(data) {
   const [ano, mes, dia] = String(data || '').split('-').map(Number);
   if (!ano || !mes || !dia) return [];
   const diaDaSemana = new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
-  return ESCALA_SEMANAL_OFICIAL[diaDaSemana] || [];
+  return (data >= '2026-10-05' ? ESCALA_SEMANAL_OFICIAL : ESCALA_SEMANAL_ANTERIOR)[diaDaSemana] || [];
 }
 const DISPONIBILIDADE_INICIAL = {
   data: hojeISO(),
